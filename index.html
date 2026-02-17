@@ -1,0 +1,1037 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ToggleX — The Context Layer for OpenClaw</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0a0a0f;
+            --bg-secondary: #12121a;
+            --bg-tertiary: #1a1a25;
+            --accent: #6366f1;
+            --accent-glow: rgba(99, 102, 241, 0.3);
+            --accent-secondary: #8b5cf6;
+            --text-primary: #fafafa;
+            --text-secondary: #a1a1aa;
+            --text-muted: #71717a;
+            --border: rgba(255, 255, 255, 0.08);
+            --success: #22c55e;
+            --gradient-start: #6366f1;
+            --gradient-end: #8b5cf6;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        /* Animated background */
+        .bg-gradient {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                radial-gradient(ellipse 80% 50% at 50% -20%, rgba(99, 102, 241, 0.15), transparent),
+                radial-gradient(ellipse 60% 40% at 80% 80%, rgba(139, 92, 246, 0.1), transparent);
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        /* Navigation */
+        nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 100;
+            padding: 1rem 2rem;
+            background: rgba(10, 10, 15, 0.8);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-weight: 700;
+            font-size: 1.25rem;
+            color: var(--text-primary);
+            text-decoration: none;
+        }
+
+        .logo-icon {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+            align-items: center;
+        }
+
+        .nav-links a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+
+        .nav-links a:hover {
+            color: var(--text-primary);
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            text-decoration: none;
+            transition: all 0.2s;
+            cursor: pointer;
+            border: none;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
+            color: white;
+            box-shadow: 0 4px 20px rgba(99, 102, 241, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(99, 102, 241, 0.4);
+        }
+
+        .btn-secondary {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            border: 1px solid var(--border);
+        }
+
+        .btn-secondary:hover {
+            background: var(--bg-secondary);
+            border-color: rgba(255, 255, 255, 0.15);
+        }
+
+        /* Hero Section */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 8rem 2rem 4rem;
+            position: relative;
+        }
+
+        .hero-content {
+            max-width: 900px;
+            text-align: center;
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: rgba(99, 102, 241, 0.1);
+            border: 1px solid rgba(99, 102, 241, 0.2);
+            border-radius: 100px;
+            font-size: 0.85rem;
+            color: var(--accent);
+            margin-bottom: 2rem;
+            font-weight: 500;
+        }
+
+        .badge::before {
+            content: '';
+            width: 8px;
+            height: 8px;
+            background: var(--accent);
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        h1 {
+            font-size: clamp(2.5rem, 6vw, 4.5rem);
+            font-weight: 700;
+            line-height: 1.1;
+            margin-bottom: 1.5rem;
+            letter-spacing: -0.02em;
+        }
+
+        .gradient-text {
+            background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end), #ec4899);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero-subtitle {
+            font-size: 1.25rem;
+            color: var(--text-secondary);
+            max-width: 600px;
+            margin: 0 auto 2.5rem;
+            line-height: 1.7;
+        }
+
+        .hero-cta {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .hero-stats {
+            display: flex;
+            gap: 3rem;
+            justify-content: center;
+            margin-top: 4rem;
+            padding-top: 2rem;
+            border-top: 1px solid var(--border);
+        }
+
+        .stat {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .stat-label {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+        }
+
+        /* Sections */
+        section {
+            padding: 6rem 2rem;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .section-header {
+            text-align: center;
+            max-width: 700px;
+            margin: 0 auto 4rem;
+        }
+
+        .section-label {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            background: rgba(99, 102, 241, 0.1);
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--accent);
+            margin-bottom: 1rem;
+        }
+
+        h2 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            letter-spacing: -0.01em;
+        }
+
+        .section-subtitle {
+            color: var(--text-secondary);
+            font-size: 1.125rem;
+        }
+
+        /* Problem Section */
+        .problem-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .problem-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 2rem;
+            transition: all 0.3s;
+        }
+
+        .problem-card:hover {
+            border-color: rgba(99, 102, 241, 0.3);
+            transform: translateY(-4px);
+        }
+
+        .problem-card h3 {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 1.1rem;
+            margin-bottom: 0.75rem;
+            color: var(--text-primary);
+        }
+
+        .problem-card h3::before {
+            content: '✓';
+            width: 24px;
+            height: 24px;
+            background: rgba(34, 197, 94, 0.1);
+            color: var(--success);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: 700;
+        }
+
+        .problem-card.x h3::before {
+            content: '✕';
+            background: rgba(239, 68, 68, 0.1);
+            color: #ef4444;
+        }
+
+        .problem-card p {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+        }
+
+        /* How it Works */
+        .how-it-works {
+            background: var(--bg-secondary);
+        }
+
+        .steps {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+        }
+
+        .step {
+            position: relative;
+            padding: 2rem;
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+        }
+
+        .step-number {
+            position: absolute;
+            top: -1rem;
+            left: 2rem;
+            width: 2rem;
+            height: 2rem;
+            background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.875rem;
+        }
+
+        .step h3 {
+            margin-top: 0.5rem;
+            margin-bottom: 0.75rem;
+            font-size: 1.1rem;
+        }
+
+        .step p {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+        }
+
+        /* Demo Section */
+        .demo-grid {
+            display: grid;
+            gap: 2rem;
+        }
+
+        .demo-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            overflow: hidden;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+        }
+
+        @media (max-width: 768px) {
+            .demo-card {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .demo-content {
+            padding: 2.5rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .demo-icon {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .demo-content h3 {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .demo-content p {
+            color: var(--text-secondary);
+            margin-bottom: 1.5rem;
+        }
+
+        .demo-code {
+            background: var(--bg-primary);
+            padding: 1.5rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            overflow-x: auto;
+        }
+
+        .code-block {
+            background: #0d0d12;
+            border-radius: 8px;
+            padding: 1.25rem;
+            border: 1px solid var(--border);
+        }
+
+        .code-header {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .code-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        .code-dot.red { background: #ff5f56; }
+        .code-dot.yellow { background: #ffbd2e; }
+        .code-dot.green { background: #27c93f; }
+
+        .code-content {
+            color: var(--text-secondary);
+            line-height: 1.8;
+        }
+
+        .code-content .comment { color: var(--text-muted); }
+        .code-content .keyword { color: #c792ea; }
+        .code-content .string { color: #c3e88d; }
+        .code-content .function { color: #82aaff; }
+
+        /* Integration */
+        .integration {
+            background: var(--bg-secondary);
+        }
+
+        .integration-visual {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 2rem;
+            flex-wrap: wrap;
+            padding: 3rem;
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+        }
+
+        .integration-box {
+            padding: 2rem 3rem;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            text-align: center;
+            min-width: 200px;
+        }
+
+        .integration-box h4 {
+            font-size: 1.25rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .integration-box p {
+            color: var(--text-muted);
+            font-size: 0.875rem;
+        }
+
+        .integration-arrow {
+            font-size: 2rem;
+            color: var(--accent);
+        }
+
+        .api-methods {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1rem;
+            margin-top: 3rem;
+        }
+
+        .api-method {
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.25rem;
+        }
+
+        .api-method-name {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9rem;
+            color: var(--accent);
+            margin-bottom: 0.5rem;
+        }
+
+        .api-method-desc {
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+        }
+
+        /* Pricing */
+        .pricing-card {
+            max-width: 450px;
+            margin: 0 auto;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            padding: 2.5rem;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .pricing-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--gradient-start), var(--gradient-end));
+        }
+
+        .pricing-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            background: rgba(99, 102, 241, 0.1);
+            border-radius: 100px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--accent);
+            margin-bottom: 1.5rem;
+        }
+
+        .pricing-card h3 {
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .pricing-card > p {
+            color: var(--text-secondary);
+            margin-bottom: 2rem;
+        }
+
+        .price {
+            font-size: 3.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .price span {
+            font-size: 1rem;
+            color: var(--text-muted);
+            font-weight: 400;
+        }
+
+        .pricing-features {
+            text-align: left;
+            margin: 2rem 0;
+        }
+
+        .pricing-features li {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem 0;
+            color: var(--text-secondary);
+            border-bottom: 1px solid var(--border);
+            list-style: none;
+        }
+
+        .pricing-features li:last-child {
+            border-bottom: none;
+        }
+
+        .pricing-features li::before {
+            content: '✓';
+            width: 20px;
+            height: 20px;
+            background: rgba(34, 197, 94, 0.1);
+            color: var(--success);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.625rem;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+
+        /* CTA Section */
+        .cta {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(139, 92, 246, 0.1));
+            border-top: 1px solid var(--border);
+            border-bottom: 1px solid var(--border);
+            text-align: center;
+        }
+
+        .cta h2 {
+            margin-bottom: 1rem;
+        }
+
+        .cta p {
+            color: var(--text-secondary);
+            max-width: 500px;
+            margin: 0 auto 2rem;
+        }
+
+        /* Footer */
+        footer {
+            padding: 3rem 2rem;
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.875rem;
+        }
+
+        footer a {
+            color: var(--text-secondary);
+            text-decoration: none;
+        }
+
+        footer a:hover {
+            color: var(--text-primary);
+        }
+
+        /* Animations */
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .float {
+            animation: float 6s ease-in-out infinite;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .nav-links {
+                display: none;
+            }
+
+            .hero-stats {
+                flex-direction: column;
+                gap: 1.5rem;
+            }
+
+            .integration-visual {
+                flex-direction: column;
+            }
+
+            .integration-arrow {
+                transform: rotate(90deg);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-gradient"></div>
+
+    <nav>
+        <div class="nav-container">
+            <a href="#" class="logo">
+                <div class="logo-icon">◐</div>
+                ToggleX
+            </a>
+            <div class="nav-links">
+                <a href="#problem">Problem</a>
+                <a href="#how-it-works">How it Works</a>
+                <a href="#demos">Demos</a>
+                <a href="#pricing">Pricing</a>
+                <a href="#" class="btn btn-primary">Get Started</a>
+            </div>
+        </div>
+    </nav>
+
+    <section class="hero">
+        <div class="hero-content">
+            <div class="badge">Now with OpenClaw Integration</div>
+            <h1>
+                Give Your AI Agent<br>
+                <span class="gradient-text">Eyes and Memory</span>
+            </h1>
+            <p class="hero-subtitle">
+                ToggleX is the missing context layer for OpenClaw. Your agent knows what you're working on, 
+                understands your projects, and suggests automations before you ask.
+            </p>
+            <div class="hero-cta">
+                <a href="#" class="btn btn-primary">Start Free Trial</a>
+                <a href="#demos" class="btn btn-secondary">See it in Action</a>
+            </div>
+            <div class="hero-stats">
+                <div class="stat">
+                    <div class="stat-value">100%</div>
+                    <div class="stat-label">Local Data</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value">50+</div>
+                    <div class="stat-label">Tools Tracked</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value">Zero</div>
+                    <div class="stat-label">Setup Required</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="problem">
+        <div class="container">
+            <div class="section-header">
+                <div class="section-label">The Problem</div>
+                <h2>Powerful Agents, Zero Context</h2>
+                <p class="section-subtitle">
+                    OpenClaw can do 100 things. But it doesn't know *which* thing to do *right now*.
+                </p>
+            </div>
+            <div class="problem-grid">
+                <div class="problem-card">
+                    <h3>Calendar Access</h3>
+                    <p>Your agent can read your calendar and schedule meetings.</p>
+                </div>
+                <div class="problem-card">
+                    <h3>Email Automation</h3>
+                    <p>It can draft, send, and organize your emails.</p>
+                </div>
+                <div class="problem-card">
+                    <h3>Shell Commands</h3>
+                    <p>Run deployments, check logs, manage infrastructure.</p>
+                </div>
+                <div class="problem-card x">
+                    <h3>No Work Context</h3>
+                    <p>It doesn't know what you were just working on or what project needs attention.</p>
+                </div>
+                <div class="problem-card x">
+                    <h3>Reactive Only</h3>
+                    <p>You must always initiate. The agent never proactively suggests based on your activity.</p>
+                </div>
+                <div class="problem-card x">
+                    <h3>Manual Prompting</h3>
+                    <p>Every interaction starts from zero. No memory of your ongoing work.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="how-it-works" class="how-it-works">
+        <div class="container">
+            <div class="section-header">
+                <div class="section-label">How it Works</div>
+                <h2>Your Work Fabric, Woven Automatically</h2>
+                <p class="section-subtitle">
+                    ToggleX captures your digital activity, builds a structured work fabric, 
+                    and feeds it to your OpenClaw agent in real-time.
+                </p>
+            </div>
+            <div class="steps">
+                <div class="step">
+                    <div class="step-number">1</div>
+                    <h3>Capture</h3>
+                    <p>Browser extension tracks your tabs, apps, and time spent — all locally, never leaving your device.</p>
+                </div>
+                <div class="step">
+                    <div class="step-number">2</div>
+                    <h3>Structure</h3>
+                    <p>AI groups related activity into projects, sessions, and contexts automatically.</p>
+                </div>
+                <div class="step">
+                    <div class="step-number">3</div>
+                    <h3>Connect</h3>
+                    <p>Your work fabric streams to OpenClaw via API. Your agent now knows what you're doing.</p>
+                </div>
+                <div class="step">
+                    <div class="step-number">4</div>
+                    <h3>Automate</h3>
+                    <p>Context-aware suggestions, proactive reminders, and intelligent workflows emerge.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="demos">
+        <div class="container">
+            <div class="section-header">
+                <div class="section-label">Live Demos</div>
+                <h2>From Reactive to Proactive</h2>
+                <p class="section-subtitle">
+                    See how ToggleX transforms your OpenClaw experience with real context.
+                </p>
+            </div>
+            <div class="demo-grid">
+                <div class="demo-card">
+                    <div class="demo-content">
+                        <div class="demo-icon">💬</div>
+                        <h3>Context-Aware Task Creation</h3>
+                        <p>Never lose context when creating tasks. Your agent knows what you're referring to without explanation.</p>
+                    </div>
+                    <div class="demo-code">
+                        <div class="code-block">
+                            <div class="code-header">
+                                <div class="code-dot red"></div>
+                                <div class="code-dot yellow"></div>
+                                <div class="code-dot green"></div>
+                            </div>
+                            <div class="code-content">
+<span class="comment"># You say:</span>
+<span class="string">"Remind me to follow up on this"</span>
+
+<span class="comment"># ToggleX context:</span>
+<span class="comment"># - Currently in Gmail</span>
+<span class="comment"># - Thread: "Q2 Budget Review"</span>
+<span class="comment"># - Last sender: sarah@company.com</span>
+
+<span class="comment"># Agent responds:</span>
+<span class="string">"Follow up on Q2 Budget Review with Sarah?"</span>
+<span class="string">"I'll remind you tomorrow at 9am."</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="demo-card">
+                    <div class="demo-code">
+                        <div class="code-block">
+                            <div class="code-header">
+                                <div class="code-dot red"></div>
+                                <div class="code-dot yellow"></div>
+                                <div class="code-dot green"></div>
+                            </div>
+                            <div class="code-content">
+<span class="comment"># You ask:</span>
+<span class="string">"Where was I?"</span>
+
+<span class="comment"># ToggleX work fabric:</span>
+<span class="comment"># Project: API Migration</span>
+<span class="comment"># - 14:32 VS Code: auth.ts (15 min)</span>
+<span class="comment"># - 14:15 Notion: API specs review</span>
+<span class="comment"># - 13:50 GitHub: PR #234 comments</span>
+
+<span class="comment"># Agent responds:</span>
+<span class="string">"You were working on API Migration:"</span>
+<span class="string">"• Editing auth.ts in VS Code"</span>
+<span class="string">"• Reviewing specs in Notion"</span>
+<span class="string">"Want me to reopen those files?"</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="demo-content">
+                        <div class="demo-icon">🧵</div>
+                        <h3>Project Continuity</h3>
+                        <p>Pick up exactly where you left off. Your agent remembers your work session context across tools.</p>
+                    </div>
+                </div>
+
+                <div class="demo-card">
+                    <div class="demo-content">
+                        <div class="demo-icon">⚡</div>
+                        <h3>Proactive Automation</h3>
+                        <p>Your agent notices patterns and offers to automate before you even think to ask.</p>
+                    </div>
+                    <div class="demo-code">
+                        <div class="code-block">
+                            <div class="code-header">
+                                <div class="code-dot red"></div>
+                                <div class="code-dot yellow"></div>
+                                <div class="code-dot green"></div>
+                            </div>
+                            <div class="code-content">
+<span class="comment"># ToggleX detects pattern:</span>
+<span class="comment"># - Visited deploy dashboard 5x in 20 min</span>
+<span class="comment"># - Last check: 2 minutes ago</span>
+
+<span class="comment"># Agent proactively messages:</span>
+<span class="string">"I noticed you've been checking the"</span>
+<span class="string">"staging deploy status repeatedly."</span>
+<span class="string">""</span>
+<span class="string">"Want me to monitor it and notify"</span>
+<span class="string">"you when it's complete?"</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="integration">
+        <div class="container">
+            <div class="section-header">
+                <div class="section-label">Integration</div>
+                <h2>Seamless OpenClaw Connection</h2>
+                <p class="section-subtitle">
+                    Install the ToggleX skill and your agent instantly gains work context superpowers.
+                </p>
+            </div>
+            <div class="integration-visual">
+                <div class="integration-box">
+                    <h4>🔍 ToggleX</h4>
+                    <p>Work Fabric Engine</p>
+                </div>
+                <div class="integration-arrow">→</div>
+                <div class="integration-box">
+                    <h4>🔌 API</h4>
+                    <p>Real-time Context Stream</p>
+                </div>
+                <div class="integration-arrow">→</div>
+                <div class="integration-box">
+                    <h4>🤖 OpenClaw</h4>
+                    <p>Context-Aware Agent</p>
+                </div>
+            </div>
+            <div class="api-methods">
+                <div class="api-method">
+                    <div class="api-method-name">get_current_project()</div>
+                    <div class="api-method-desc">Returns what the user is working on right now</div>
+                </div>
+                <div class="api-method">
+                    <div class="api-method-name">get_recent_context(n)</div>
+                    <div class="api-method-desc">Fetches last N work sessions with full metadata</div>
+                </div>
+                <div class="api-method">
+                    <div class="api-method-name">get_project_history(id)</div>
+                    <div class="api-method-desc">Complete timeline of any project</div>
+                </div>
+                <div class="api-method">
+                    <div class="api-method-name">suggest_next_actions()</div>
+                    <div class="api-method-desc">AI-powered recommendations based on patterns</div>
+                </div>
+                <div class="api-method">
+                    <div class="api-method-name">search_work_fabric(query)</div>
+                    <div class="api-method-desc">Semantic search across all activity</div>
+                </div>
+                <div class="api-method">
+                    <div class="api-method-name">get_active_session()</div>
+                    <div class="api-method-desc">Real-time view of current work session</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="pricing">
+        <div class="container">
+            <div class="section-header">
+                <div class="section-label">Pricing</div>
+                <h2>Simple, Transparent Pricing</h2>
+                <p class="section-subtitle">
+                    Everything you need to give your AI agent superpowers.
+                </p>
+            </div>
+            <div class="pricing-card">
+                <div class="pricing-badge">OpenClaw Integration Included</div>
+                <h3>ToggleX Professional</h3>
+                <p>For individuals who want context-aware AI</p>
+                <div class="price">€50<span>/month</span></div>
+                <ul class="pricing-features">
+                    <li>Unlimited work fabric storage</li>
+                    <li>Real-time OpenClaw integration</li>
+                    <li>50+ tool integrations</li>
+                    <li>AI project grouping</li>
+                    <li>Context-aware suggestions</li>
+                    <li>Semantic search</li>
+                    <li>Local-first, privacy-focused</li>
+                    <li>Priority support</li>
+                </ul>
+                <a href="#" class="btn btn-primary" style="width: 100%; justify-content: center;">Start Free Trial</a>
+                <p style="margin-top: 1rem; font-size: 0.875rem; color: var(--text-muted);">14-day free trial. No credit card required.</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="cta">
+        <div class="container">
+            <h2>Ready to Give Your Agent Context?</h2>
+            <p>Join the first wave of context-aware AI agents. Be the early adopter that defines the future.</p>
+            <div class="hero-cta">
+                <a href="#" class="btn btn-primary">Get Started Free</a>
+                <a href="#" class="btn btn-secondary">View Documentation</a>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <p>© 2026 ToggleX. Built for the OpenClaw community.</p>
+        <p style="margin-top: 0.5rem;">
+            <a href="#">Privacy</a> · <a href="#">Terms</a> · <a href="#">GitHub</a> · <a href="#">Discord</a>
+        </p>
+    </footer>
+</body>
+</html>
